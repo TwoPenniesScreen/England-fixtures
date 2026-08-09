@@ -15,9 +15,7 @@ const COMPETITION_LOGOS = {
   "euros": "/assets/competitions/euros.png",
   "world-cup-qualifier": "/assets/competitions/european-qualifiers.png",
   "euro-qualifier": "/assets/competitions/european-qualifiers.png",
-  "nations-league": "/assets/competitions/nations-league.png",
-  "friendly": "/assets/competitions/friendly.png",
-  "other": "/assets/competitions/other.png"
+  "nations-league": "/assets/competitions/nations-league.png"
 };
 
 export function tidyName(name = "") {
@@ -78,9 +76,13 @@ function fixtureMarkup(f, featured) {
 }
 
 function competitionLogo(competition) {
-  const key = COMPETITION_LOGOS[competition] ? competition : "other";
-  const label = COMPETITION_LABELS[key] || COMPETITION_LABELS.other;
-  return `<img class="competition-logo" src="${COMPETITION_LOGOS[key]}" alt="${escapeHtml(label)}" decoding="sync">`;
+  if (competition === "friendly") {
+    return `<span class="competition-name">${COMPETITION_LABELS.friendly}</span>`;
+  }
+  const source = COMPETITION_LOGOS[competition];
+  if (!source) return "";
+  const label = COMPETITION_LABELS[competition];
+  return `<img class="competition-logo" src="${source}" alt="${escapeHtml(label)}" decoding="sync">`;
 }
 
 function escapeHtml(value) { const d = document.createElement("div"); d.textContent = value; return d.innerHTML; }

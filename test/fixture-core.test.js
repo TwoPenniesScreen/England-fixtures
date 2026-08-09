@@ -22,3 +22,15 @@ test("competition types render bundled monochrome PNG marks", () => {
   assert.match(target.innerHTML,/\/assets\/competitions\/nations-league\.png/);
   assert.doesNotMatch(target.innerHTML,/competition-name/);
 });
+test("friendlies use a plain text label", () => {
+  const target={innerHTML:""};
+  renderScreen(target,{fixtures:[f("Germany","2026-09-01","19:45",{competition:"friendly"})]},new Date("2026-08-01"));
+  assert.match(target.innerHTML,/class="competition-name">INTERNATIONAL FRIENDLY/);
+  assert.doesNotMatch(target.innerHTML,/friendly\.png/);
+});
+test("other leaves the competition slot blank", () => {
+  const target={innerHTML:""};
+  renderScreen(target,{fixtures:[f("Germany","2026-09-01","19:45",{competition:"other"})]},new Date("2026-08-01"));
+  assert.match(target.innerHTML,/class="competition competition-other"[^>]*><\/div>/);
+  assert.doesNotMatch(target.innerHTML,/other\.png|>INTERNATIONAL</);
+});
