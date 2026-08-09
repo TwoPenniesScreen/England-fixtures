@@ -10,14 +10,6 @@ const COMPETITION_LABELS = {
   "other": "INTERNATIONAL"
 };
 
-const COMPETITION_LOGOS = {
-  "world-cup": "/assets/competitions/world-cup.png",
-  "euros": "/assets/competitions/euros.png",
-  "world-cup-qualifier": "/assets/competitions/european-qualifiers.png",
-  "euro-qualifier": "/assets/competitions/european-qualifiers.png",
-  "nations-league": "/assets/competitions/nations-league.png"
-};
-
 export function tidyName(name = "") {
   const aliases = {
     "england": "ENGLAND",
@@ -72,17 +64,12 @@ export function renderScreen(target, data, now = new Date()) {
 function fixtureMarkup(f, featured) {
   const teams = f.venue === "away" ? [tidyName(f.opponent), "ENGLAND"] : ["ENGLAND", tidyName(f.opponent)];
   const competition = escapeHtml(f.competition || "other");
-  return `<article class="fixture ${featured ? "fixture-featured" : "fixture-small"}"><div class="teams"><strong>${escapeHtml(teams[0])}</strong><b>V</b><strong>${escapeHtml(teams[1])}</strong></div><div class="competition competition-${competition}" aria-label="${escapeHtml(competition.replaceAll("-", " "))}">${competitionLogo(f.competition)}</div><time>${formatWhen(f)}</time></article>`;
+  return `<article class="fixture ${featured ? "fixture-featured" : "fixture-small"}"><div class="teams"><strong>${escapeHtml(teams[0])}</strong><b>V</b><strong>${escapeHtml(teams[1])}</strong></div><div class="competition competition-${competition}" aria-label="${escapeHtml(competition.replaceAll("-", " "))}">${competitionLabel(f.competition)}</div><time>${formatWhen(f)}</time></article>`;
 }
 
-function competitionLogo(competition) {
-  if (competition === "friendly") {
-    return `<span class="competition-name">${COMPETITION_LABELS.friendly}</span>`;
-  }
-  const source = COMPETITION_LOGOS[competition];
-  if (!source) return "";
-  const label = COMPETITION_LABELS[competition];
-  return `<img class="competition-logo" src="${source}" alt="${escapeHtml(label)}" decoding="sync">`;
+function competitionLabel(competition) {
+  const label = competition === "other" ? "" : COMPETITION_LABELS[competition];
+  return label ? `<span class="competition-name">${escapeHtml(label)}</span>` : "";
 }
 
 function escapeHtml(value) { const d = document.createElement("div"); d.textContent = value; return d.innerHTML; }

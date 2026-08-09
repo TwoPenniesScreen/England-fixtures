@@ -15,18 +15,17 @@ test("pin becomes featured and is not duplicated below", () => { const all=[f("a
 test("hidden fixtures are excluded", () => assert.equal(selectFixtures([f("a","2026-09-01","15:00",{hidden:true})],new Date("2026-08-01")).featured,null));
 test("tidyName follows the live-score shortening philosophy", () => { assert.equal(tidyName("England"),"ENGLAND"); assert.equal(tidyName("Korea Republic"),"SOUTH KOREA"); });
 test("no eligible fixtures renders the televised-games fallback", () => { const target={innerHTML:""}; renderScreen(target,{fixtures:[]},new Date("2026-08-01")); assert.match(target.innerHTML,/EVERY TELEVISED/); assert.match(target.innerHTML,/ENGLAND GAME/); });
-test("competition types render bundled monochrome PNG marks", () => {
+test("competition types render clean plain text labels", () => {
   const target={innerHTML:""};
   renderScreen(target,{fixtures:[f("Germany","2026-09-01","19:45",{competition:"nations-league"})]},new Date("2026-08-01"));
-  assert.match(target.innerHTML,/class="competition-logo"/);
-  assert.match(target.innerHTML,/\/assets\/competitions\/nations-league\.png/);
-  assert.doesNotMatch(target.innerHTML,/competition-name/);
+  assert.match(target.innerHTML,/class="competition-name">UEFA NATIONS LEAGUE/);
+  assert.doesNotMatch(target.innerHTML,/competition-logo|\.png/);
 });
 test("friendlies use a plain text label", () => {
   const target={innerHTML:""};
   renderScreen(target,{fixtures:[f("Germany","2026-09-01","19:45",{competition:"friendly"})]},new Date("2026-08-01"));
   assert.match(target.innerHTML,/class="competition-name">INTERNATIONAL FRIENDLY/);
-  assert.doesNotMatch(target.innerHTML,/friendly\.png/);
+  assert.doesNotMatch(target.innerHTML,/competition-logo|\.png/);
 });
 test("other leaves the competition slot blank", () => {
   const target={innerHTML:""};
