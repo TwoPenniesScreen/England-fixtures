@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>England Fixture Admin — Two Pennies</title>
+  <link rel="preload" href="/assets/fonts/roboto-regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body class="admin-page">
+  <div id="admin-shell" hidden>
+    <header class="admin-header"><div><p class="eyebrow">Two Pennies</p><h1>England Fixture Admin</h1></div><div class="admin-actions"><button id="sync" class="secondary">Sync TV calendar</button><button id="lock" class="secondary">Lock admin</button><button id="add" class="primary">Add fixture</button></div></header>
+    <main class="admin-grid">
+      <section class="panel"><div class="panel-heading"><h2>Fixtures</h2><span id="save-state"></span></div><p id="calendar-state" class="calendar-state"></p><div id="fixture-list" class="fixture-list"></div></section>
+      <section class="panel preview-panel"><div class="panel-heading"><h2>Screen preview</h2><span>16:9</span></div><div class="preview-frame"><div id="preview" class="fixture-screen"></div></div></section>
+    </main>
+  </div>
+  <dialog id="editor">
+    <form id="fixture-form" method="dialog">
+      <div class="dialog-heading"><h2 id="editor-title">Add fixture</h2><button type="button" id="close" class="icon-button" aria-label="Close">×</button></div>
+      <input type="hidden" name="id">
+      <label>Opponent<input name="opponent" required autocomplete="off"></label>
+      <div class="form-row"><label>Date<input name="date" type="date" required></label><label>Kick-off<input name="time" type="time"><small>Leave blank for TBC</small></label></div>
+      <div class="form-row"><label>Venue<select name="venue"><option value="home">Home</option><option value="away">Away</option></select></label><label>Competition<select name="competition"><option value="world-cup">FIFA World Cup</option><option value="euros">UEFA Euro</option><option value="world-cup-qualifier">World Cup qualifier</option><option value="euro-qualifier">Euro qualifier</option><option value="nations-league">UEFA Nations League</option><option value="friendly">International friendly</option><option value="other">Other</option></select></label></div>
+      <label class="check"><input name="hidden" type="checkbox"> Hide this fixture from the screen</label>
+      <p id="calendar-note" class="calendar-note" hidden>Imported from your TV calendar. Hiding it or making a correction here will survive future calendar updates.</p>
+      <div class="dialog-actions"><button type="button" id="delete" class="danger">Delete</button><span></span><button type="button" id="cancel">Cancel</button><button class="primary" value="save">Save fixture</button></div>
+    </form>
+  </dialog>
+  <dialog id="login"><form id="login-form" method="dialog"><h2>Admin password</h2><p>Enter the password to manage the fixture screen.</p><label>Password<input name="password" type="password" required autofocus autocomplete="current-password"></label><p id="login-error" class="error"></p><button class="primary" value="login">Unlock admin</button></form></dialog>
+  <script type="module" src="/admin.js"></script>
+</body>
+</html>
