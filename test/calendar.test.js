@@ -28,7 +28,7 @@ END:VCALENDAR`;
 test("parses only England fixtures from the subscribed TV calendar", () => {
   const events = parseCalendar(ICS);
   assert.equal(events.length, 3);
-  assert.deepEqual(events[0].defaults, { opponent: "Scotland", date: "2026-08-12", time: "17:15", competition: "friendly", venue: "away" });
+  assert.deepEqual(events[0].defaults, { opponent: "Scotland", date: "2026-08-12", time: "17:15", dateMode: "exact", competition: "friendly", venue: "away" });
   assert.equal(events[1].defaults.competition, "nations-league");
   assert.equal(events[2].defaults.competition, "world-cup-qualifier");
 });
@@ -46,6 +46,20 @@ test("first sync adopts matching manual fixtures and adds new TV games", () => {
   const spain = saved.fixtures.find(fixture => fixture.opponent === "Spain");
   assert.equal(spain.id, "existing");
   assert.equal(spain.hidden, true);
+  assert.equal(spain.source, "calendar");
+});
+
+test("a confirmed calendar fixture replaces its provisional playing window", () => {
+  const current = { fixtures: [{ id: "window", opponent: "Spain", date: "2026-08-17", time: "", dateMode: "window", competition: "nations-league", venue: "away", hidden: false, pinned: true }] };
+  const saved = mergeCalendarData(current, parseCalendar(ICS));
+  const spain = saved.fixtures.find(fixture => fixture.opponent === "Spain");
+  assert.equal(saved.fixtures.filter(fixture => fixture.opponent === "Spain").length, 1);
+  assert.equal(spain.id, "window");
+  assert.equal(spain.dateMode, "exact");
+  assert.equal(spain.date, "2026-08-23");
+  assert.equal(spain.time, "16:30");
+  assert.equal(spain.venue, "home");
+  assert.equal(spain.pinned, true);
   assert.equal(spain.source, "calendar");
 });
 
