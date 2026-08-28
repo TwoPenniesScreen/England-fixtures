@@ -2,6 +2,7 @@ import type { Config, Context } from "@netlify/functions";
 import { applyAdminUpdate } from "./_shared/calendar.js";
 import { syncCalendar } from "./_shared/sync-calendar.ts";
 import { getFixtureStore } from "./_shared/store.ts";
+import { validateDisplayData } from "../../fixture-schema.js";
 
 const EMPTY = { fixtures: [], updatedAt: null };
 const headers = { "Content-Type": "application/json", "Cache-Control": "no-store" };
@@ -11,9 +12,15 @@ const json = (body: unknown, status = 200, extraHeaders: Record<string, string> 
 
 export default async (req: Request, context: Context) => {
   const store = getFixtureStore(context);
-  if (req.method === "GET") return json((await store.get("current", { type: "json" })) || EMPTY);
-
   const expected = Netlify.env.get("ADMIN_PASSWORD");
+  if (req.method === "GET") {
+    const stored = await safeStoreRead(store);
+    if (new URL(req.url).searchParams.get("view") === "admin") {
+      const authorised = expected ? await verifySession(readCookie(req, SESSION_COOKIE), expected) : false;
+      return authorised ? json(stored || EMPTY) : json({ error: "Unauthorised" }, 401);
+    }
+    return json(validateDisplayData(stored || EMPTY) || EMPTY);
+  }
   if (req.method === "DELETE") return json({ ok: true }, 200, { "Set-Cookie": clearSessionCookie() });
   const supplied = req.headers.get("x-admin-password") || req.headers.get("authorization")?.replace(/^Bearer\s+/i, "") || "";
   const cookieAuthorised = expected ? await verifySession(readCookie(req, SESSION_COOKIE), expected) : false;
@@ -33,12 +40,25 @@ export default async (req: Request, context: Context) => {
     if (!Array.isArray(body.fixtures) || body.fixtures.length > 100) return json({ error: "Invalid fixture data" }, 400);
     const fixtures = body.fixtures.map(validateFixture);
     if (fixtures.filter(f => f.pinned).length > 1) return json({ error: "Only one fixture can be pinned" }, 400);
-    const current = (await store.get("current", { type: "json" })) || EMPTY;
+    const validated = validateDisplayData({ fixtures }, { requireFixture: true });
+    if (!validated || validated.fixtures.length !== fixtures.length) return json({ error: "Fixture data contains duplicates or invalid records" }, 400);
+    const current = await safeStoreRead(store);
+    if (!current) return json({ error: "Stored fixture data is invalid; refusing to overwrite it" }, 500);
     const saved = applyAdminUpdate(current, fixtures);
     await store.setJSON("current", saved);
     return json(saved);
   } catch (error) { return json({ error: error instanceof Error ? error.message : "Invalid request" }, 400); }
 };
+
+async function safeStoreRead(store: ReturnType<typeof getFixtureStore>) {
+  try {
+    const value = await store.get("current", { type: "json" });
+    if (value == null) return EMPTY;
+    if (!value || typeof value !== "object" || Array.isArray(value) || !Array.isArray((value as any).fixtures)) return null;
+    const display = validateDisplayData(value);
+    return display && display.fixtures.length === (value as any).fixtures.length ? value : null;
+  } catch { return null; }
+}
 
 function validateFixture(value: any) {
   if (!value || typeof value !== "object") throw new Error("Invalid fixture");

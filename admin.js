@@ -11,7 +11,7 @@ const login = $("#login");
 const shell = $("#admin-shell");
 
 async function request(method = "GET", body) {
-  const action = method === "POST" && body?.action ? `?action=${encodeURIComponent(body.action)}` : "";
+  const action = method === "GET" ? "?view=admin" : method === "POST" && body?.action ? `?action=${encodeURIComponent(body.action)}` : "";
   const payload = body?.action ? undefined : body;
   const response = await fetch(`/api/fixtures${action}`, {
     method,

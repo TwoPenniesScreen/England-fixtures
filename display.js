@@ -1,54 +1,21 @@
-import { FALLBACK_DATA, renderScreen } from "./fixture-core.js";
+import { FALLBACK_DATA, renderScreen, selectFixtures } from "./fixture-core.js";
+import { loadCurrentFixtures, readValidatedCache } from "./display-runtime.js";
 
-const CACHE_KEY = "two-pennies-england-fixtures-v1";
-const REFRESH_INTERVAL = 15 * 60 * 1000;
 const target = document.querySelector("#display");
 const connection = document.querySelector("#connection");
-let latestData;
-let renderedSignature = null;
-let waitingForFirstFixtureData;
+const lkg = readValidatedCache();
+const initial = lkg || FALLBACK_DATA;
+const displayedFixture = Boolean(selectFixtures(initial.fixtures || []).featured);
 
-function readCache() {
-  try { return JSON.parse(localStorage.getItem(CACHE_KEY)); } catch { return null; }
-}
+renderScreen(target, initial);
 
-function fixtureSignature(data) {
-  return JSON.stringify(data.fixtures || []);
-}
-
-function draw(data, { allowVisible = false, force = false } = {}) {
-  const signature = fixtureSignature(data);
-  if (!force && signature === renderedSignature) return;
-  if (!allowVisible && !document.hidden && renderedSignature !== null) return;
-  renderScreen(target, data);
-  renderedSignature = signature;
-}
-
-async function refresh() {
-  let data;
-  try {
-    const response = await fetch("/api/fixtures", { cache: "no-store" });
-    if (!response.ok) throw new Error("Fixture service unavailable");
-    data = await response.json();
-    localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+loadCurrentFixtures({
+  onData(data) {
     connection.hidden = true;
-  } catch {
-    data = readCache() || FALLBACK_DATA;
-    connection.hidden = !(data.fixtures || []).length;
+    // Preserve a validated fixture layout for this AbleSign page instance.
+    // The branded fallback may be replaced by the first current fixture result.
+    if (!displayedFixture) renderScreen(target, data);
   }
-  latestData = data;
-  const firstFixtureData = waitingForFirstFixtureData && (data.fixtures || []).length > 0;
-  if (firstFixtureData) waitingForFirstFixtureData = false;
-  draw(data, { allowVisible: firstFixtureData });
-}
-
-latestData = readCache() || FALLBACK_DATA;
-waitingForFirstFixtureData = !(latestData.fixtures || []).length;
-draw(latestData, { allowVisible: true });
-refresh();
-document.addEventListener("visibilitychange", () => {
-  if (!document.hidden) return;
-  draw(latestData, { allowVisible: true, force: true });
-  refresh();
+}).then(result => {
+  if (!result.ok) connection.hidden = !displayedFixture;
 });
-setInterval(refresh, REFRESH_INTERVAL);

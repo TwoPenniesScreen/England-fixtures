@@ -1,3 +1,5 @@
+import { addCalendarDays, londonDateTimeToEpoch } from "./london-time.js";
+
 export const FALLBACK_DATA = { fixtures: [], updatedAt: null };
 
 const COMPETITION_LABELS = {
@@ -15,34 +17,32 @@ export function tidyName(name = "") {
     "england": "ENGLAND",
     "republic of ireland": "IRELAND", "korea republic": "SOUTH KOREA",
     "united states": "USA", "united states of america": "USA",
-    "bosnia and herzegovina": "BOSNIA-HERZ.",
-    "tottenham hotspur": "TOTTENHAM", "tottenham hotspur fc": "TOTTENHAM",
-    "afc bournemouth": "BOURNEMOUTH", "brighton and hove albion": "BRIGHTON",
-    "brighton & hove albion": "BRIGHTON", "wolverhampton wanderers": "WOLVES",
-    "manchester united": "MAN UTD", "manchester city": "MAN CITY",
-    "nottingham forest": "NOTT'M FOREST", "west ham united": "WEST HAM"
+    "bosnia and herzegovina": "BOSNIA-HERZ."
   };
   const clean = String(name).trim().replace(/\s+fc$/i, "").replace(/\s+/g, " ");
   return (aliases[clean.toLowerCase()] || clean).toUpperCase();
 }
 
 export function kickoffOf(fixture) {
-  if (fixture.dateMode === "window") return new Date(`${fixture.date}T00:00:00`);
+  if (fixture.dateMode === "window") return new Date(londonDateTimeToEpoch(fixture.date, "00:00"));
   const time = fixture.time || "23:59";
-  return new Date(`${fixture.date}T${time}:00`);
+  return new Date(londonDateTimeToEpoch(fixture.date, time));
 }
 
 export function eligibleFixtures(fixtures, now = new Date()) {
   return fixtures.filter(f => {
     if (f.hidden || !f.date) return false;
     if (f.dateMode === "window") {
-      const end = new Date(`${f.date}T00:00:00`);
-      end.setDate(end.getDate() + 7);
-      return end > now;
+      const end = londonDateTimeToEpoch(addCalendarDays(f.date, 7), "00:00");
+      return Number.isFinite(end) && end > now.getTime();
     }
-    if (!f.time) return new Date(`${f.date}T23:59:59`) >= now;
-    return kickoffOf(f).getTime() + 45 * 60 * 1000 > now.getTime();
-  }).sort((a, b) => kickoffOf(a) - kickoffOf(b));
+    if (!f.time) {
+      const end = londonDateTimeToEpoch(addCalendarDays(f.date, 1), "00:00");
+      return Number.isFinite(end) && end > now.getTime();
+    }
+    const kickoff = kickoffOf(f).getTime();
+    return Number.isFinite(kickoff) && kickoff + 45 * 60 * 1000 > now.getTime();
+  }).sort(compareForDisplay);
 }
 
 export function selectFixtures(fixtures, now = new Date()) {
@@ -53,12 +53,12 @@ export function selectFixtures(fixtures, now = new Date()) {
 }
 
 export function formatWhen(fixture) {
-  const date = new Date(`${fixture.date}T12:00:00`);
+  const date = new Date(`${fixture.date}T12:00:00Z`);
   if (fixture.dateMode === "window") {
-    const windowStart = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short" }).format(date).toUpperCase();
+    const windowStart = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/London", day: "numeric", month: "short" }).format(date).toUpperCase();
     return `W/C ${windowStart} TBC`;
   }
-  const bits = new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "numeric", month: "short" }).format(date).replace(",", "").toUpperCase();
+  const bits = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/London", weekday: "short", day: "numeric", month: "short" }).format(date).replace(",", "").toUpperCase();
   return `${bits} ${fixture.time || "TBC"}`;
 }
 
@@ -83,3 +83,9 @@ function competitionLabel(competition) {
 }
 
 function escapeHtml(value) { const d = document.createElement("div"); d.textContent = value; return d.innerHTML; }
+
+function compareForDisplay(a, b) {
+  const timeDifference = kickoffOf(a).getTime() - kickoffOf(b).getTime();
+  if (timeDifference) return timeDifference;
+  return String(a.id || "").localeCompare(String(b.id || ""));
+}
