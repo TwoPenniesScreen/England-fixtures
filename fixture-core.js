@@ -1,4 +1,4 @@
-import { addCalendarDays, londonDateTimeToEpoch } from "./london-time.js";
+import { addCalendarDays, londonDateAtInstant, londonDateTimeToEpoch } from "./london-time.js";
 
 export const FALLBACK_DATA = { fixtures: [], updatedAt: null };
 
@@ -52,12 +52,15 @@ export function selectFixtures(fixtures, now = new Date()) {
   return { featured, upcoming: eligible.filter(f => !featured || f.id !== featured.id).slice(0, 3) };
 }
 
-export function formatWhen(fixture) {
+export function formatWhen(fixture, now = new Date()) {
   const date = new Date(`${fixture.date}T12:00:00Z`);
   if (fixture.dateMode === "window") {
     const windowStart = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/London", day: "numeric", month: "short" }).format(date).toUpperCase();
     return `W/C ${windowStart} TBC`;
   }
+  const today = londonDateAtInstant(now).date;
+  if (fixture.time && fixture.date === today) return `TODAY ${fixture.time}`;
+  if (fixture.time && fixture.date === addCalendarDays(today, 1)) return `TOMORROW ${fixture.time}`;
   const bits = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/London", weekday: "short", day: "numeric", month: "short" }).format(date).replace(",", "").toUpperCase();
   return `${bits} ${fixture.time || "TBC"}`;
 }
@@ -68,13 +71,13 @@ export function renderScreen(target, data, now = new Date()) {
     target.innerHTML = `<section class="fallback-message" aria-label="Every televised England game"><span>EVERY TELEVISED</span><strong>ENGLAND GAME</strong></section>`;
     return;
   }
-  target.innerHTML = `<section class="featured">${fixtureMarkup(featured, true)}</section><section class="upcoming count-${upcoming.length}">${upcoming.map(f => fixtureMarkup(f, false)).join("")}</section>`;
+  target.innerHTML = `<section class="featured">${fixtureMarkup(featured, true, now)}</section><section class="upcoming count-${upcoming.length}">${upcoming.map(f => fixtureMarkup(f, false, now)).join("")}</section>`;
 }
 
-function fixtureMarkup(f, featured) {
+function fixtureMarkup(f, featured, now) {
   const teams = f.venue === "away" ? [tidyName(f.opponent), "ENGLAND"] : ["ENGLAND", tidyName(f.opponent)];
   const competition = escapeHtml(f.competition || "other");
-  return `<article class="fixture ${featured ? "fixture-featured" : "fixture-small"}"><div class="teams"><strong>${escapeHtml(teams[0])}</strong><b>V</b><strong>${escapeHtml(teams[1])}</strong></div><div class="competition competition-${competition}" aria-label="${escapeHtml(competition.replaceAll("-", " "))}">${competitionLabel(f.competition)}</div><time>${formatWhen(f)}</time></article>`;
+  return `<article class="fixture ${featured ? "fixture-featured" : "fixture-small"}"><div class="teams"><strong>${escapeHtml(teams[0])}</strong><b>V</b><strong>${escapeHtml(teams[1])}</strong></div><div class="competition competition-${competition}" aria-label="${escapeHtml(competition.replaceAll("-", " "))}">${competitionLabel(f.competition)}</div><time>${formatWhen(f, now)}</time></article>`;
 }
 
 function competitionLabel(competition) {
