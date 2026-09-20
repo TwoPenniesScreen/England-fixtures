@@ -122,12 +122,15 @@ test("UTC DTSTART is converted to Europe/London and can cross a calendar boundar
 test("Europe/London TZID and all-day DTSTART are supported", () => {
   const london = parseCalendar(calendarEvent("England v Spain", "20260926T194500", "london", ";TZID=Europe/London"))[0];
   assert.deepEqual([london.defaults.date, london.defaults.time], ["2026-09-26", "19:45"]);
+  const providerAlias = parseCalendar(calendarEvent("England v Spain", "20260926T194500", "provider", ";TZID=/ics.py/2020.1/Europe/London"))[0];
+  assert.deepEqual([providerAlias.defaults.date, providerAlias.defaults.time], ["2026-09-26", "19:45"]);
   const allDay = parseCalendar(calendarEvent("England v Spain", "20260926", "all-day", ";VALUE=DATE"))[0];
   assert.deepEqual([allDay.defaults.date, allDay.defaults.time, allDay.defaults.dateMode], ["2026-09-26", "", "exact"]);
 });
 
 test("unsupported TZID and malformed or nonexistent timestamps are rejected", () => {
   assert.equal(parseCalendar(calendarEvent("England v Spain", "20260926T194500", "foreign", ";TZID=America/New_York")).length, 0);
+  assert.equal(parseCalendar(calendarEvent("England v Spain", "20260926T194500", "foreign-alias", ";TZID=/ics.py/2020.1/America/New_York")).length, 0);
   assert.equal(parseCalendar(calendarEvent("England v Spain", "20260230T194500", "invalid")).length, 0);
   assert.equal(parseCalendar(calendarEvent("England v Spain", "20260329T013000", "nonexistent", ";TZID=Europe/London")).length, 0);
 });
