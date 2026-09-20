@@ -50,7 +50,8 @@ export function parseIcsDateTime(property) {
     return { ...london, dateMode: "exact", instant };
   }
   const tzid = parameters.TZID || LONDON;
-  if (tzid !== LONDON) return null;
+  // Live Football On TV's calendar uses the ics.py-prefixed alias for London.
+  if (tzid !== LONDON && !/^\/ics\.py\/[^/]+\/Europe\/London$/.test(tzid)) return null;
   const instant = londonDateTimeToEpoch(rawDate, rawTime);
   return Number.isFinite(instant) ? { date: rawDate, time: rawTime, dateMode: "exact", instant } : null;
 }
