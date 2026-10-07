@@ -6,6 +6,10 @@ import { validateDisplayData } from "../../fixture-schema.js";
 
 const EMPTY = { fixtures: [], updatedAt: null };
 const headers = { "Content-Type": "application/json", "Cache-Control": "no-store" };
+const publicHeaders = {
+  "Cache-Control": "public, max-age=0, must-revalidate",
+  "Netlify-CDN-Cache-Control": "public, durable, s-maxage=600, stale-while-revalidate=60"
+};
 const SESSION_COOKIE = "england_fixtures_admin";
 const SESSION_SECONDS = 60 * 60 * 24 * 30;
 const json = (body: unknown, status = 200, extraHeaders: Record<string, string> = {}) => new Response(JSON.stringify(body), { status, headers: { ...headers, ...extraHeaders } });
@@ -19,7 +23,7 @@ export default async (req: Request, context: Context) => {
       const authorised = expected ? await verifySession(readCookie(req, SESSION_COOKIE), expected) : false;
       return authorised ? json(stored || EMPTY) : json({ error: "Unauthorised" }, 401);
     }
-    return json(validateDisplayData(stored || EMPTY) || EMPTY);
+    return json(validateDisplayData(stored || EMPTY) || EMPTY, 200, publicHeaders);
   }
   if (req.method === "DELETE") return json({ ok: true }, 200, { "Set-Cookie": clearSessionCookie() });
   const supplied = req.headers.get("x-admin-password") || req.headers.get("authorization")?.replace(/^Bearer\s+/i, "") || "";

@@ -18,7 +18,7 @@ export async function loadCurrentFixtures({ fetchImpl = globalThis.fetch, storag
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const response = await fetchImpl("/api/fixtures", { cache: "no-store", signal: controller.signal });
+    const response = await fetchImpl("/api/fixtures", { signal: controller.signal });
     if (!response.ok) throw new Error(`Fixture service returned ${response.status || "an error"}`);
     const raw = await response.json();
     const data = validateDisplayData(raw, { requireFixture: true });
