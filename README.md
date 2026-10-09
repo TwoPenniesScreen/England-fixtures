@@ -27,7 +27,7 @@ All fixture eligibility and date boundaries are calculated explicitly in `Europe
 1. Connect this repository to a separate Netlify site. No build command is required; the publish directory is `.`.
 2. Add a secret environment variable named `ADMIN_PASSWORD`. This protects all fixture changes. Do not put it in this repository.
 3. Add the private calendar subscription URL as `LIVE_FOOTBALL_TV_CALENDAR_URL`. Never commit that URL.
-4. Deploy, visit `/admin`, enter the password, and select **Sync TV calendar** once. Netlify then refreshes it automatically every day at 04:17 UTC. The provider is contacted only by this scheduled or administrator-triggered sync; public display loads read the stored Blob.
+4. Deploy, visit `/admin`, enter the password, and select **Sync TV calendar** whenever the calendar needs refreshing. Automatic syncing is paused to conserve the Netlify Serverless allowance. Public display loads continue to read the stored Blob.
 
 Fixture data lives in a strongly consistent, site-scoped Netlify Blobs store and therefore persists across deploys. Public display data is read-only; writes require a valid server-issued admin session.
 
